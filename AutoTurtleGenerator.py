@@ -17,7 +17,7 @@ import itertools
 import turtle
 import os,time
 import math
-
+import random
 
 class _Picture:
     def __init__(self, path,size):
@@ -351,6 +351,9 @@ class PixelManager:
         self.VirtualPos={}
         self.GroupCount=0
         self.root=root
+    def shuffleGroup(self):
+        random.shuffle(self.GroupList)
+            
     def processWindow(self,pos=None,mid=False):
         self.process_W=Toplevel(self.root)
         self.process_W.attributes('-topmost',1)
@@ -582,7 +585,7 @@ class PixelManager:
         return None
             
 class AutoTurtleGenerator:
-    def __init__(self):
+    def __init__(self,randomGroup=False):
         self.Picture=None
         self.imgFile=None
         self.span=10    #色彩分辨率 10-255
@@ -591,6 +594,7 @@ class AutoTurtleGenerator:
         self.RunFlag=False
         self.Manager=None
         self.turtleHandle=None
+        self.randomGroup=randomGroup
         
     def main(self):
         self.buildWindow()
@@ -700,7 +704,7 @@ class AutoTurtleGenerator:
         self.Manager.grouping()
         self.Manager.groupGetOutline()
         self.Manager.groupLevelJudge()
-        self.turtleHandle=TurtleWorks(self.Manager,self.turtleRecord)
+        self.turtleHandle=TurtleWorks(self.Manager,self.turtleRecord,randomGroup=self.randomGroup)
         self.turtleHandle.work()
         
 class TurtleRecord:
@@ -852,7 +856,7 @@ class TurtleRecord:
         # turtle.done()
             
 class TurtleWorks:
-    def __init__(self,GroupManager,record):
+    def __init__(self,GroupManager,record,randomGroup=False):
         self.GroupManager=GroupManager
         self.record=record
         self.record.setSaveFile(self.record.getNewName())
@@ -860,6 +864,7 @@ class TurtleWorks:
         self.record.setOperationList(self.operationList)
         self.workStartTime=time.time()
         self.author='Aikko'
+        self.randomGroup=randomGroup
     def initTurtle(self):
         self.record.record('import turtle')
         self.record.setup(800,800)
@@ -873,13 +878,16 @@ class TurtleWorks:
         self.GroupManager.processWindow()
         self.initTurtle()
         maxLevel=self.GroupManager.getMaxLevel()
+        if self.randomGroup:
+            self.GroupManager.shuffleGroup()
         curCount=1
         startTime=time.time()
+        _color=None
         for i in range(1,maxLevel+1):
             for group in self.GroupManager.GroupList:
                 if group.level==i:
                     self.GroupManager.process(1,1,curCount,self.GroupManager.GroupCount,self.transTime(self.leftTime(startTime,curCount,self.GroupManager.GroupCount)))
-                    self._work_byGroup(group)
+                    _color=self._work_byGroup(group,_color)
                     curCount+=1
         self.record.hideturtle()
         self.record.done()
@@ -910,7 +918,7 @@ class TurtleWorks:
         '''需增加拉伸补偿'''
         return (curPos[0]-200,-curPos[1]+200)
     
-    def _work_byGroup(self,group):
+    def _work_byGroup(self,group,_lastColor):
         allPixel=group.PixelBox[:]
         if len(allPixel)>len(group.outline):
             _fillFlag=True
@@ -922,7 +930,8 @@ class TurtleWorks:
         _footprint=[_startPos]
         self.record.penup()
         self.record.goto(*self.posDeviation(_startPos))
-        self.record.pencolor(group.rgb)
+        if _lastColor!=group.rgb:
+            self.record.pencolor(group.rgb)
         if _fillFlag:
             self.record.fillcolor(group.rgb)
             self.record.begin_fill()
@@ -1011,7 +1020,7 @@ class TurtleWorks:
                 self.record.goto(*self.posDeviation(pos))
                 self.record.pendown()
                 self.record.dot(1) 
-        return
+        return group.rgb
 
     def bevelCalc(self,step):
         return (step)*math.sqrt(2)
@@ -1061,5 +1070,5 @@ class TurtleWorks:
         return -diff+180
     
 if __name__=='__main__':
-    Auto=AutoTurtleGenerator()
+    Auto=AutoTurtleGenerator(False)
     Auto.main()
