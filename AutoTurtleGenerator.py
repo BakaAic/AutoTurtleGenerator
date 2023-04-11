@@ -705,6 +705,7 @@ class AutoTurtleGenerator:
         self.Manager.groupGetOutline()
         self.Manager.groupLevelJudge()
         self.turtleHandle=TurtleWorks(self.Manager,self.turtleRecord,randomGroup=self.randomGroup)
+        self.turtleRecord.picAdjustArguments(self.span,self.deviation)
         self.turtleHandle.work()
         
 class TurtleRecord:
@@ -723,6 +724,8 @@ class TurtleRecord:
             else:
                 return 'turtle_'+str(self.currentName)+'.py'
         
+    def picAdjustArguments(self,span,deviation):
+        self.adjustText='#span='+str(span)+',deviation='+str(deviation)+'\n'
     def setSaveFile(self,saveFile):
         self.saveFile=saveFile
     def recordWindow(self):
@@ -763,7 +766,7 @@ class TurtleRecord:
     def save(self):
         assert self.saveFile!=None,'未设置保存文件'
         with open(self.saveFile,'w') as f:
-            f.write('import turtle\nimport math\n\n')
+            f.write(self.adjustText+'import turtle\nimport math\n\n')
             for i in self.operationList:
                 f.write(i+'\n')
                 
@@ -872,7 +875,6 @@ class TurtleWorks:
         self.record.bevelset()
         self.record.pensize(1)
         self.record.speed(0)
-    
     def work(self):
         self.record.recordWindow()
         self.GroupManager.processWindow()
@@ -1069,6 +1071,8 @@ class TurtleWorks:
                 diff+=360
         return -diff+180
     
+
 if __name__=='__main__':
     Auto=AutoTurtleGenerator(False)
+    #AutoTurtleGenerator类参数为True时，绘图时会打乱Group顺序，按照层级随机进行不同坐标的绘制，为False时按照Group原始顺序，从左上到右下的优先顺序进行绘制
     Auto.main()
